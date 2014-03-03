@@ -1,0 +1,23 @@
+// This contract adds to the nameserver example in the
+// ethereum whitepaper. It stores the sender address
+// along with the name data so the sender address can 
+// modify the data - CLL
+
+// input: tx.data[0] = name, tx.data[1] = name data
+// stores: key: name, value: [owner address, name data]
+
+// if the fee isn't large enough to run the contract, stop
+if tx.value < 200 * block.basefee:
+    stop
+// if the name can overwrite the contract code, stop
+if tx.data[0] < 100:
+    stop
+// if name already exists and the sender isn't the name owner, stop
+if contract.storage[tx.data[0]]:
+    if contract.storage[tx.data[0]][0] != tx.sender:
+        stop
+// set name owner and associated data
+a = array()
+a[0] = tx.sender
+a[1] = tx.data[1]
+contract.storage[tx.data[0]] = a

@@ -1,0 +1,20 @@
+;; This contract is a slight improvement from nameserver1.
+;; We have added the ability to let the name 'owner' transfer
+;; ownership by passing in the address of the new owner - LLL
+
+;; input: tx.data[0] = name, tx.data[1] = name data, tx.data[2] = new owner (optional)
+;; stores: key: name, value: [owner address (or new owner), name data]
+
+(seq
+  ;; if the fee isn't large enough to run the contract, stop
+  (when (< (txdata 0) (* 200 (basefee))) (stop))
+  ;; if the name can overwrite the contract code, stop
+  (when (< (txdata 0) 100) (stop))
+  ;; if name already exists and sender isn't the name owner, stop
+  (when (!= ((sload (txdata 0)) 0))
+    (when (!= ((sload (txdata 0)) 0) (txsender)) (stop))
+  )
+  ;; set name owner and associated data
+  ;; if the new owner has been specified, store as owner
+  (sstore (txdata 0) '((if (!= (txdata 2) 0) (txdata 2) (txsender)) (txdata 1)))
+)

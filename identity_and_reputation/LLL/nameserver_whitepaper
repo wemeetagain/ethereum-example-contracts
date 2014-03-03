@@ -1,0 +1,10 @@
+;; nameserer from ethereum whitepaper - LLL
+(seq
+  ;; stop if the fee isn't enough to run the contract
+  (when (< (txvalue) (* 200 (basefee))) (stop))
+  ;; stop if the name is taken or the name could conflict
+  ;; with the contract code
+  (when (or (!= (sload (txdata 0)) 0) (< (txdata 0) 100)) (stop))
+  ;; write name data
+  (sstore (txdata 0) (txdata 1))
+)

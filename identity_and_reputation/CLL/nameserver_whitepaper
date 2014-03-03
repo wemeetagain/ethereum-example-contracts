@@ -1,0 +1,11 @@
+//nameserver from ethereum whitepaper - CLL
+
+// stop if the fee isn't enough to run the contract
+if tx.value < block.basefee * 200:
+    stop
+// stop if the name is taken or the name could conflict
+// with the contract code
+if contract.storage[tx.data[0]] or tx.data[0] < 100:
+    stop
+// write name data
+contract.storage[tx.data[0]] = tx.data[1]

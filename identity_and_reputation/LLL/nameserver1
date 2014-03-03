@@ -1,0 +1,20 @@
+;; This contract adds to the nameserver example in the
+;; ethereum whitepaper. It stores the sender address
+;; along with the name data so the sender address can
+;; modify the data - LLL
+
+;; input: tx.data[0] = name, tx.data[1] = name data
+;; stores: key: name, value: [owner address, name data]
+
+(seq
+  ;; if the fee isn't large enough to run the contract, stop
+  (when (< (txdata 0) (* 200 (basefee))) (stop))
+  ;; if the name can overwrite the contract code, stop
+  (when (< (txdata 0) 100) (stop))
+  ;; if name already exists and sender isn't the name owner, stop
+  (when (!= ((sload (txdata 0)) 0)) 
+    (when (!= ((sload (txdata 0)) 0) (txsender)) (stop))
+  )
+  ;; set name owner and associated data
+  (sstore (txdata 0) '((txsender) (txdata 1)))
+)
