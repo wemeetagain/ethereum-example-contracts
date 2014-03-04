@@ -1,0 +1,72 @@
+;; 'skeleton' DAO from ethereum whitepaper
+;; There are three transaction types:
+;;     [0,k] to register a vote in favor of a code change
+;;     [1,k,L,v0,v1,...,vN] to register a code change at code k in favor of setting memory starting from location L to v0, v1 ... vn
+;;     [2,k] to finalize a given code change
+
+;; contract.storage[2^255] = number of members
+;; membership is stored with a 1 at contract.storage[memberAddress]
+;; value C should be replaced with the contract creator's address in order to add him as the DAO's first member;
+;;   from there, it will be C's responsibility to use the democratic code change protocol to add a few other members and code to bootstrap the organization.
+    
+(seq
+  ;; if the transaction fee isn't enough for the contract to run, stop
+  (when (< (txvalue) (* (basefee) 200)) (stop))
+  ;; if the sender isn't a member of the organization, stop
+  (when (= (sload (txsender)) 0) (stop))
+  ;; create unique key for a given code change
+  ("k" (sha3 32 (txdata 1)))
+  ;; if this is a 'vote' transaction
+  (if (= (txdata 0) 0)
+    ;; if the sender has not voted yet, add his vote to this code change's total, and mark sender as voted
+    (when (= (sload (+ ("k") (txsender))) 0)
+      (seq
+        (sstore (+ ("k") (txsender)) 1)
+        (sstore ("k") (+ (sload ("k")) 1))
+      )
+    )
+  ;; if this is a 'register new code' transaction
+    (if (= (txdata 0) 1)
+      (seq
+        ;; if the transaction fee can't cover adding the 'new code' or code already exists for this entry, stop
+        (when (or (<= (txvalue) (* (txdatan) (basefee) 200)) (!= (sload ("k")) 0)) (stop))
+        ("i" 2)
+        ;; for each line of 'new code', add it to the contract
+        (for (< ("i") (txdatan))
+          (seq
+            (ssave (+ ("k") 1) (txdata ("i")))
+            ("i" (+ ("i")))
+          )
+        )
+        ;; mark that code exists at this entry and note how many lines of code there are
+        (sstore ("k") 1)
+        (sstore (+ ("k") 1) (txdatan))
+      )
+  ;; if this is a 'finalize code change' transaction
+      (when (= (txdata 0) 2)
+        ;; if at least 2/3 of the organization members have voted on the code change
+        (when (>= (sload ("k")) (* (sload (^ 2 255)) (/ 2 3)))
+          (seq
+            ;; if the transaction fee can't cover copying all lines of code to be copied, stop
+            (when (<= (txvalue) (* (txdatan) (basefee) 200)) (stop)) ;; I believe this line should read: (when (<= (txvalue) (* (sload (+ ("k") 1)) (basefee) 200)) (stop))
+            ("i" 3)
+            ;; copy code changes into place, line by line
+            (for (< ("i") (sload (+ ("k") 1))
+              (seq
+                (sstore (- (+ (sload (+ ("k") 2)) ("i")) 3) (txdata ("i")))
+                ("i" (+ ("i") 1))
+              )
+            )
+          )
+        )
+      )
+    )
+  )
+  ;; if the contract isn't initialized, initialize it, and set address C as a member
+  (when (= (sload (+ (^ 2 255) 1)) 0)
+    (seq
+      (sstore (+ (^ 2 255) 1) 1)
+      (sstore C 1)
+    )
+  )
+)
