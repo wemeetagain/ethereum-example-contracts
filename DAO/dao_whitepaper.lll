@@ -45,7 +45,7 @@
   ;; if this is a 'finalize code change' transaction
       (when (= (txdata 0) 2)
         ;; if at least 2/3 of the organization members have voted on the code change
-        (when (>= (sload ("k")) (* (sload (^ 2 255)) (/ 2 3)))
+        (when (>= (sload ("k")) (* (sload (EXP 2 255)) (/ 2 3)))
           (seq
             ;; if the transaction fee can't cover copying all lines of code to be copied, stop
             (when (<= (txvalue) (* (txdatan) (basefee) 200)) (stop)) ;; I believe this line should read: (when (<= (txvalue) (* (sload (+ ("k") 1)) (basefee) 200)) (stop))
@@ -63,7 +63,7 @@
     )
   )
   ;; if the contract isn't initialized, initialize it, and set address C as a member
-  (when (= (sload (+ (^ 2 255) 1)) 0)
+  (when (= (sload (+ (EXP 2 255) 1)) 0)
     (seq
       (sstore (+ (^ 2 255) 1) 1)
       (sstore C 1)
