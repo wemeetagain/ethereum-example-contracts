@@ -1,0 +1,28 @@
+// sub-currency contract from the ethereum whitepaper
+
+// tx data = [A,X], where A is the address to send to, X is the amount to send
+
+// if the transaction fee isnt high enough to complete the transaction, stop
+if tx.value < 100 * block.basefee:
+    stop
+// if the contract has been initialized
+elif contract.storage[1000]:
+    // set subcurrency transaction from, to, and transaction amount variables
+    from = tx.sender
+    to = tx.data[0]
+    value = tx.data[1]
+    // if the 'to' address is invalid, and could jeopardize the contract logic, stop
+    if to <= 1000:
+        stop
+    // if the 'from' address doesn't have a high enough balance to pay the requested amount, stop
+    if contract.storage[from] < value:
+        stop
+    // transaction is valid, proceed with transaction
+    // withdraw transaction amount from sender, debit transaction amount to receiver
+    contract.storage[from] = contract.storage[from] - value
+    contract.storage[to] = contract.storage[to] + value
+// contract hasn't been initialized, initialize.
+else:
+    // add 10^18 sub-currency units to MYCREATOR address, set contract as initialized
+    contract.storage[MYCREATOR] = 10^18
+    contract.storage[1000] = 1
