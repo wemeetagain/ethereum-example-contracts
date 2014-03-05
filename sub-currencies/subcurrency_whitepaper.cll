@@ -2,7 +2,7 @@
 
 // tx data = [A,X], where A is the address to send to, X is the amount to send
 
-// if the transaction fee isnt high enough to complete the transaction, stop
+// if the transaction fee isnt high enough to complete the contract, stop
 if tx.value < 100 * block.basefee:
     stop
 // if the contract has been initialized

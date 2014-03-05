@@ -1,0 +1,27 @@
+;; sub-currency contract from the ethereum whitepaper
+
+;; tx data = [A,X], where A is the address to send to, X is the amount to send
+    
+(seq
+  ;; if the transaction fee isnt high enough to complete the contract, stop
+  (when (< (txvalue) 100) (stop))
+  ;; if the contract has been initialized
+  (if (!= (sload 1000) 0)
+    (seq
+      ;; if the 'to' address is invalid, and could jeopardize the contract logic, stop
+      (when (<= (txdata 0) 1000) (stop))
+      ;; if the 'from' address doesn't have a high enough balance to pay the requested amount, stop
+      (when (< (sload (txsender)) (txdata 1)) (stop))
+      ;; transaction is valid, proceed with transaction
+      ;; withdraw transaction amount from sender, debit transaction amount to receiver
+      (sstore (txsender) (- (sload (txsender)) (txdata 1)))
+      (sstore (txdata 0) (+ (sload (txdata 0)) (txdata 1)))
+    )
+    ;; contract hasn't been initialized, initialize.
+    (seq
+      ;; add 10^18 sub-currency units to MYCREATOR address, set contract as initialized
+      (sstore MYCREATOR (EXP 10 18))
+      (sstore 1000 1)
+    )
+  )
+)
